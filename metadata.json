@@ -1,0 +1,5 @@
+{
+  "name": "Registro de Horas",
+  "description": "Una aplicación para registrar horas de trabajo o actuaciones y enviarlas directamente a una hoja de cálculo de Google Sheets. Calcula automáticamente la duración y mantiene una copia local de los registros enviados.",
+  "requestFramePermissions": []
+}
