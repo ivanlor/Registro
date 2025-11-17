@@ -1,6 +1,6 @@
 import type { TimeRecord } from '../types';
 
-// URL del script de Google. Reemplaza esto con tu URL de despliegue.
+// URL del script de la aplicación. Reemplaza esto con tu URL de despliegue.
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygt8_3nGfCvNh4jH_89GmbEZ-ObwdB8V1V1dDm5NQWg2dAULlXUc_oyNe2bi3ukk0y/exec';
 
 interface ScriptResponse {
@@ -14,7 +14,7 @@ const postToScript = async (payload: object): Promise<ScriptResponse> => {
     method: 'POST',
     headers: {
       // Se usa 'text/plain' para evitar una solicitud de "preflight" de CORS (OPTIONS).
-      // Google Apps Script maneja esto correctamente si el cuerpo es una cadena JSON.
+      // El script de destino maneja esto correctamente si el cuerpo es una cadena JSON.
       'Content-Type': 'text/plain;charset=utf-8',
     },
     body: JSON.stringify(payload),
@@ -25,7 +25,7 @@ const postToScript = async (payload: object): Promise<ScriptResponse> => {
     throw new Error(`Error en la comunicación con el servidor: ${response.statusText} (${response.status})`);
   }
 
-  // Google Apps Script a veces envuelve la respuesta en una redirección,
+  // El script de destino a veces envuelve la respuesta en una redirección,
   // por lo que el `Content-Type` puede ser 'text/plain'.
   // Intentamos parsear como JSON, y si falla, mostramos el texto.
   const textResponse = await response.text();
@@ -33,7 +33,7 @@ const postToScript = async (payload: object): Promise<ScriptResponse> => {
     return JSON.parse(textResponse) as ScriptResponse;
   } catch (e) {
     console.error("La respuesta del script no es un JSON válido:", textResponse);
-    throw new Error("Respuesta inesperada del servidor de Google. Revisa la consola para más detalles.");
+    throw new Error("Respuesta inesperada del servidor. Revisa la consola para más detalles.");
   }
 };
 

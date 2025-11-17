@@ -35,11 +35,11 @@ export default function App() {
       const response = await addRecordToSheet(recordWithId);
       
       if (response.result.toLowerCase() !== 'success') {
-        throw new Error(response.message || 'Error desconocido desde Google Scripts.');
+        throw new Error(response.message || 'Error desconocido desde el servidor.');
       }
 
       setRecords(prev => [{ ...recordWithId, status: 'success' }, ...prev]);
-      setNotification({ message: 'Registro añadido a Google Sheets con éxito.', type: 'success' });
+      setNotification({ message: 'Registro enviado con éxito.', type: 'success' });
       
     } catch (err) {
       console.error('Failed to send data:', err);
@@ -51,7 +51,7 @@ export default function App() {
   };
 
   const handleDelete = async (recordId: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de la copia local y de Google Sheets?')) {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro? Se eliminará de la copia local y del sistema remoto.')) {
         return;
     }
     
@@ -62,7 +62,7 @@ export default function App() {
       const response = await deleteRecordFromSheet(recordId);
 
       if (response.result.toLowerCase() !== 'success') {
-        throw new Error(response.message || 'Error desconocido desde Google Scripts.');
+        throw new Error(response.message || 'Error desconocido desde el servidor.');
       }
 
       setRecords(prev => prev.filter(r => r.id !== recordId));
@@ -93,7 +93,6 @@ export default function App() {
                   <LogoIcon />
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Registro de Horas por Período</h1>
               </div>
-              <p className="text-slate-600">Introduce el inicio y el fin de tu actuación. Las horas se calcularán automáticamente y se enviarán a Google Sheets.</p>
           </header>
           
           <TimeRecordForm onSubmit={handleSubmit} isLoading={isLoading} />
