@@ -15,6 +15,14 @@
   }
 }
 </script>
+<style>
+  /* Oculta el icono nativo del selector de fecha/hora en navegadores WebKit (Chrome, Safari, Edge) */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+</style>
 </head>
   <body class="bg-slate-50">
     <div id="root"></div>
