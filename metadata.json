@@ -1,5 +1,5 @@
 {
-  "name": "Registro de Horas",
-  "description": "Una aplicación para registrar horas de trabajo o actuaciones y enviarlas a un sistema de registro. Calcula automáticamente la duración y mantiene una copia local de los registros enviados.",
+  "name": "Registros Aqualia",
+  "description": "Se recogen parámetros técnicos y de personal",
   "requestFramePermissions": []
 }

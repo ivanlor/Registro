@@ -1,15 +1,19 @@
-export interface TimeRecord {
-  id: string;
-  startDate: string;
-  endDate: string;
-  startTime: string;
-  endTime: string;
-  name: string;
-  description: string;
-  observations?: string;
-  calculatedHours: number;
-  status: 'success' | 'error' | 'pending';
-  timestamp: string;
+
+export interface FormData {
+    [key: string]: string | number;
 }
 
-export type NewTimeRecord = Omit<TimeRecord, 'id' | 'status' | 'timestamp'>;
+export interface FormField {
+    id: string;
+    label: string;
+    type: 'text' | 'number' | 'date' | 'time' | 'textarea' | 'select';
+    required?: boolean;
+    readOnly?: boolean;
+    options?: { value: string; label: string }[];
+    className?: string;
+}
+
+export interface Status {
+    type: 'idle' | 'success' | 'error';
+    message: string;
+}
