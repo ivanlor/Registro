@@ -113,33 +113,15 @@ const App: React.FC = () => {
 
         // Normalización para eliminar tildes y diacríticos (ej: á -> a, ñ -> n)
         // Esto impide la inserción de tildes en cualquier campo.
-        const sanitizedValue = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        let sanitizedValue = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        // Reemplazo automático de puntos por comas en campos específicos de rutina y operacional
+        if ((workflow === 'rutina' || workflow === 'operacional') && ['ph', 'turbidez', 'cloro'].includes(name)) {
+            sanitizedValue = sanitizedValue.replace(/\./g, ',');
+        }
 
         setFormData(prev => {
             const newData = { ...prev, [name]: sanitizedValue };
-
-            // Automatic calculation for 'dias' in Vacations workflow
-            if (workflow === 'personal_vacaciones' && (name === 'fecha_inicio' || name === 'fecha_fin')) {
-                const startDateStr = name === 'fecha_inicio' ? sanitizedValue : String(prev.fecha_inicio);
-                const endDateStr = name === 'fecha_fin' ? sanitizedValue : String(prev.fecha_fin);
-
-                if (startDateStr && endDateStr) {
-                    const start = new Date(startDateStr);
-                    const end = new Date(endDateStr);
-                    
-                    // Calculate difference in milliseconds
-                    const diffTime = end.getTime() - start.getTime();
-                    // Convert to days
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    // Add 1 to include both start and end dates (e.g., 1st to 1st is 1 day)
-                    // Ensure days is at least 0 (or 1?)
-                    const totalDays = diffDays >= 0 ? diffDays + 1 : 0;
-                    
-                    newData['dias'] = totalDays;
-                }
-            }
-
             return newData;
         });
 
@@ -149,8 +131,12 @@ const App: React.FC = () => {
 
             if (sanitizedValue === '') return newErrors;
 
-            const numericValue = parseFloat(sanitizedValue);
-            if (isNaN(numericValue) && e.target.type === 'number') return newErrors;
+            // Para validación, convertimos coma a punto para que parseFloat funcione
+            const valueForValidation = sanitizedValue.replace(',', '.');
+            const numericValue = parseFloat(valueForValidation);
+
+            // Si no es un número válido, no podemos validar rangos (salvo que el campo sea texto libre, pero 'ph' y 'cloro' requieren ser números)
+            if (isNaN(numericValue)) return newErrors;
 
             const validationRules: Record<string, Record<string, { condition: boolean; message: string }>> = {
                 rutina: {
@@ -224,8 +210,10 @@ const App: React.FC = () => {
                         Personal
                     </button>
                 </div>
-                 <footer className="text-center mt-12 text-sm text-slate-500 dark:text-slate-400">
-                    <p>Creado para la recolección eficiente de datos.</p>
+                 <footer className="w-full max-w-2xl mx-auto mt-12 px-4">
+                    <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
+                         Creado para la recolección eficiente de datos.
+                    </div>
                 </footer>
             </div>
         );
@@ -234,24 +222,28 @@ const App: React.FC = () => {
     if (workflow === 'personal') {
         return (
             <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans">
-                <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10 relative text-center">
-                     <button 
-                        onClick={() => setWorkflow(null)} 
-                        className="absolute top-4 sm:top-6 left-4 sm:left-6 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
-                    >
-                        &larr; Volver
-                    </button>
+                <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10">
+                     <div className="flex justify-start mb-4">
+                        <button 
+                            onClick={() => setWorkflow(null)} 
+                            className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
+                        >
+                            &larr; Volver
+                        </button>
+                     </div>
                     
-                    <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-8 mt-4">Gestión de Personal</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Elige una opción:</p>
+                    <div className="text-center">
+                        <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-8">Gestión de Personal</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Elige una opción:</p>
 
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                        <button onClick={() => setWorkflow('personal_horas')} className="px-8 py-4 text-lg font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
-                            Registro de horas
-                        </button>
-                        <button onClick={() => setWorkflow('personal_vacaciones')} className="px-8 py-4 text-lg font-semibold text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105">
-                            Vacaciones
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                            <button onClick={() => setWorkflow('personal_horas')} className="px-8 py-4 text-lg font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                                Registro de horas
+                            </button>
+                            <button onClick={() => setWorkflow('personal_vacaciones')} className="px-8 py-4 text-lg font-semibold text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105">
+                                Vacaciones
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -261,20 +253,22 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans">
             <div className="w-full max-w-4xl mx-auto">
-                <div className="bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10 relative">
-                     <button 
-                        onClick={() => {
-                            // If currently in a personal sub-workflow, go back to personal menu. Otherwise go to main menu.
-                            if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
-                                setWorkflow('personal');
-                            } else {
-                                setWorkflow(null);
-                            }
-                        }} 
-                        className="absolute top-4 sm:top-6 left-4 sm:left-6 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
-                    >
-                        &larr; Volver
-                    </button>
+                <div className="bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10">
+                     <div className="flex justify-start mb-4">
+                        <button 
+                            onClick={() => {
+                                // If currently in a personal sub-workflow, go back to personal menu. Otherwise go to main menu.
+                                if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+                                    setWorkflow('personal');
+                                } else {
+                                    setWorkflow(null);
+                                }
+                            }} 
+                            className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
+                        >
+                            &larr; Volver
+                        </button>
+                    </div>
                     <div className="text-center mb-8">
                         <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-white">{formTitle}</h1>
                         <p className="text-slate-500 dark:text-slate-400 mt-2">Introduce los datos correspondientes.</p>
@@ -362,6 +356,7 @@ const App: React.FC = () => {
                                     readOnly={field.readOnly}
                                     error={errors[field.id]}
                                     className={field.className}
+                                    inputMode={((workflow === 'rutina' || workflow === 'operacional') && ['ph', 'turbidez', 'cloro'].includes(field.id)) ? 'decimal' : undefined}
                                 />
                             )})}
                         </div>

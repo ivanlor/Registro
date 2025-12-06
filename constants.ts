@@ -18,8 +18,8 @@ export const SAMPLING_POINTS = [
 export const RUTINA_FORM_FIELDS: FormField[] = [
     { id: 'punto_de_muestreo', label: 'Punto de Muestreo', type: 'select', options: SAMPLING_POINTS, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
-    { id: 'ph', label: 'pH', type: 'number', required: true },
-    { id: 'cloro', label: 'Cloro libre residual', type: 'number', required: true },
+    { id: 'ph', label: 'pH', type: 'text', required: true },
+    { id: 'cloro', label: 'Cloro libre residual', type: 'text', required: true },
     { id: 'color', label: 'Color', type: 'text', required: false },
     { id: 'olor', label: 'Olor', type: 'text', required: false },
     { id: 'sabor', label: 'Sabor', type: 'text', required: false },
@@ -27,8 +27,8 @@ export const RUTINA_FORM_FIELDS: FormField[] = [
 ];
 
 export const OPERACIONAL_FORM_FIELDS: FormField[] = [
-    { id: 'ph', label: 'pH', type: 'number', required: true },
-    { id: 'cloro', label: 'Cloro libre residual', type: 'number', required: true },
+    { id: 'ph', label: 'pH', type: 'text', required: true },
+    { id: 'cloro', label: 'Cloro libre residual', type: 'text', required: true },
     { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
 ];
@@ -49,5 +49,5 @@ export const PERSONAL_VACACIONES_FORM_FIELDS: FormField[] = [
     { id: 'apellidos', label: 'Apellidos', type: 'text', required: true },
     { id: 'fecha_inicio', label: 'F. Inicio', type: 'date', required: true },
     { id: 'fecha_fin', label: 'F. Fin', type: 'date', required: true },
-    { id: 'dias', label: 'Días', type: 'number', required: true, readOnly: true },
+    { id: 'dias', label: 'Días', type: 'number', required: true },
 ];
