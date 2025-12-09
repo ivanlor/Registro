@@ -9,7 +9,6 @@ import Textarea from './components/Textarea';
 import Select from './components/Select';
 import { CheckCircleIcon } from './components/icons/CheckCircleIcon';
 import { XCircleIcon } from './components/icons/XCircleIcon';
-import { ScriptHelp } from './components/ScriptHelp';
 
 type Workflow = 'rutina' | 'operacional' | 'tecnico' | 'personal' | 'personal_horas' | 'personal_vacaciones';
 type Errors = Record<string, string>;
@@ -35,7 +34,6 @@ const App: React.FC = () => {
     const [status, setStatus] = useState<Status>({ type: 'idle', message: '' });
     const [errors, setErrors] = useState<Errors>({});
     const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [showScriptHelp, setShowScriptHelp] = useState(false);
 
     const { currentFields, sheetName, formTitle } = useMemo(() => {
         if (workflow === 'rutina') {
@@ -397,16 +395,6 @@ const App: React.FC = () => {
                         <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">
                              Creado para la recolección eficiente de datos.
                         </div>
-                        {/* Botón discreto para mostrar ayuda del script */}
-                        <div className="text-center">
-                            <button 
-                                onClick={() => setShowScriptHelp(!showScriptHelp)}
-                                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
-                            >
-                                {showScriptHelp ? 'Ocultar ayuda configuración' : 'Configuración Google Script'}
-                            </button>
-                        </div>
-                        {showScriptHelp && <div className="mt-4 text-left"><ScriptHelp /></div>}
                     </footer>
                 </div>
             </div>
