@@ -361,48 +361,54 @@ const App: React.FC = () => {
 
     if (!workflow) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans text-center relative">
-                {status.message && status.type !== 'idle' && (
-                    <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
-                         <Alert type={status.type} message={status.message} />
-                    </div>
-                )}
+            <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans">
+                {/* Contenedor principal tipo tarjeta */}
+                <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10 text-center relative">
+                    
+                    {/* Alerta de estado dentro de la tarjeta */}
+                    {status.message && status.type !== 'idle' && (
+                        <div className="mb-6 text-left">
+                             <Alert type={status.type} message={status.message} />
+                        </div>
+                    )}
 
-                 <div className="mb-8">
-                    <h1 className="text-4xl sm:text-5xl font-bold text-slate-800 dark:text-white">Registros Aqualia</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-4 text-lg">Selecciona el tipo de registro que deseas realizar.</p>
-                </div>
-                {/* BOTONES PRINCIPALES: Hechos más anchos y apilados verticalmente */}
-                <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
-                    <button onClick={() => setWorkflow('rutina')} className="w-full px-8 py-4 text-xl font-bold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
-                        Registrar Rutina
-                    </button>
-                    <button onClick={() => setWorkflow('operacional')} className="w-full px-8 py-4 text-xl font-bold text-slate-900 bg-yellow-400 rounded-lg shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
-                        Registrar Operacional
-                    </button>
-                     <button onClick={() => setWorkflow('tecnico')} className="w-full px-8 py-4 text-xl font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
-                        Técnico (Bombeos)
-                    </button>
-                    <button onClick={() => setWorkflow('personal')} className="w-full px-8 py-4 text-xl font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
-                        Personal
-                    </button>
-                </div>
-
-                 <footer className="w-full max-w-2xl mx-auto mt-8 px-4">
-                    <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
-                         Creado para la recolección eficiente de datos.
+                    <div className="mb-8">
+                        <h1 className="text-3xl sm:text-5xl font-bold text-slate-800 dark:text-white">Registros Aqualia</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-4 text-lg">Selecciona el tipo de registro.</p>
                     </div>
-                    {/* Botón discreto para mostrar ayuda del script */}
-                    <div className="text-center">
-                        <button 
-                            onClick={() => setShowScriptHelp(!showScriptHelp)}
-                            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
-                        >
-                            {showScriptHelp ? 'Ocultar ayuda configuración' : 'Configuración Google Script'}
+
+                    {/* BOTONES PRINCIPALES: Estilo tarjeta y apilados */}
+                    <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+                        <button onClick={() => setWorkflow('rutina')} className="w-full px-8 py-4 text-xl font-bold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
+                            Registrar Rutina
+                        </button>
+                        <button onClick={() => setWorkflow('operacional')} className="w-full px-8 py-4 text-xl font-bold text-slate-900 bg-yellow-400 rounded-lg shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
+                            Registrar Operacional
+                        </button>
+                         <button onClick={() => setWorkflow('tecnico')} className="w-full px-8 py-4 text-xl font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                            Técnico (Bombeos)
+                        </button>
+                        <button onClick={() => setWorkflow('personal')} className="w-full px-8 py-4 text-xl font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+                            Personal
                         </button>
                     </div>
-                    {showScriptHelp && <div className="mt-4 text-left"><ScriptHelp /></div>}
-                </footer>
+
+                     <footer className="w-full mt-8">
+                        <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">
+                             Creado para la recolección eficiente de datos.
+                        </div>
+                        {/* Botón discreto para mostrar ayuda del script */}
+                        <div className="text-center">
+                            <button 
+                                onClick={() => setShowScriptHelp(!showScriptHelp)}
+                                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
+                            >
+                                {showScriptHelp ? 'Ocultar ayuda configuración' : 'Configuración Google Script'}
+                            </button>
+                        </div>
+                        {showScriptHelp && <div className="mt-4 text-left"><ScriptHelp /></div>}
+                    </footer>
+                </div>
             </div>
         );
     }
