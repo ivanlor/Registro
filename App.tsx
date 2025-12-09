@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { RUTINA_FORM_FIELDS, OPERACIONAL_FORM_FIELDS, PERSONAL_HORAS_FORM_FIELDS, PERSONAL_VACACIONES_FORM_FIELDS } from './constants';
+import { RUTINA_FORM_FIELDS, OPERACIONAL_FORM_FIELDS, PERSONAL_HORAS_FORM_FIELDS, PERSONAL_VACACIONES_FORM_FIELDS, TECNICO_FORM_FIELDS } from './constants';
 import type { FormData, Status, FormField } from './types';
 import { submitData } from './services/googleSheetsService';
 import Input from './components/Input';
@@ -7,9 +7,16 @@ import Button from './components/Button';
 import Alert from './components/Alert';
 import Textarea from './components/Textarea';
 import Select from './components/Select';
+import { CheckCircleIcon } from './components/icons/CheckCircleIcon';
+import { XCircleIcon } from './components/icons/XCircleIcon';
 
-type Workflow = 'rutina' | 'operacional' | 'personal' | 'personal_horas' | 'personal_vacaciones';
+type Workflow = 'rutina' | 'operacional' | 'tecnico' | 'personal' | 'personal_horas' | 'personal_vacaciones';
 type Errors = Record<string, string>;
+type HistoryItem = {
+    [key: string]: string | number | boolean;
+    timestamp: string;
+    synced: boolean;
+};
 
 // --- URLs Config ---
 // IMPORTANTE: Sustituye esta URL si cambia al crear una nueva implementación
@@ -26,6 +33,7 @@ const App: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [status, setStatus] = useState<Status>({ type: 'idle', message: '' });
     const [errors, setErrors] = useState<Errors>({});
+    const [history, setHistory] = useState<HistoryItem[]>([]);
 
     const { currentFields, sheetName, formTitle } = useMemo(() => {
         if (workflow === 'rutina') {
@@ -40,6 +48,13 @@ const App: React.FC = () => {
                 currentFields: OPERACIONAL_FORM_FIELDS,
                 sheetName: 'Operacional',
                 formTitle: 'Registro Operacional'
+            };
+        }
+        if (workflow === 'tecnico') {
+            return {
+                currentFields: TECNICO_FORM_FIELDS,
+                sheetName: 'Bombeos', // Coincide con la pestaña de la hoja de cálculo
+                formTitle: 'Registro Técnico de Bombeo'
             };
         }
         if (workflow === 'personal_horas') {
@@ -66,7 +81,7 @@ const App: React.FC = () => {
         const initialState: FormData = {};
         
         // Base fields based on workflow
-        if (workflow === 'rutina' || workflow === 'operacional') {
+        if (workflow === 'rutina' || workflow === 'operacional' || workflow === 'tecnico') {
             initialState['date'] = today;
         }
 
@@ -104,6 +119,23 @@ const App: React.FC = () => {
             setFormData(getInitialState(currentFields));
             setStatus({ type: 'idle', message: '' });
             setErrors({});
+        }
+        
+        // Cargar historial si aplica
+        if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+            const key = `aqualia_historial_${workflow}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    setHistory(JSON.parse(saved));
+                } catch (e) {
+                    setHistory([]);
+                }
+            } else {
+                setHistory([]);
+            }
+        } else {
+            setHistory([]);
         }
     }, [workflow, currentFields, getInitialState]);
 
@@ -148,6 +180,7 @@ const App: React.FC = () => {
                     ph: { condition: numericValue < 6.5 || numericValue > 9.5, message: 'El valor de pH debe estar entre 6,5 y 9,5.' },
                     turbidez: { condition: numericValue > 2, message: 'El valor de turbidez no debe superar 2.' },
                 },
+                tecnico: {},
                 personal_horas: {},
                 personal_vacaciones: {}
             };
@@ -173,17 +206,155 @@ const App: React.FC = () => {
         setIsLoading(true);
         setStatus({ type: 'idle', message: '' });
 
+        let submissionSuccess = false;
+        let resultMessage = '';
+
         try {
+            // Intentar enviar a Google Sheets
             const result = await submitData(formData, APPS_SCRIPT_URL, sheetName, GOOGLE_SHEET_URL);
+            submissionSuccess = true;
+            resultMessage = result.message;
             setStatus({ type: 'success', message: result.message });
-            setFormData(getInitialState(currentFields));
-            setErrors({});
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-            setStatus({ type: 'error', message });
+            submissionSuccess = false;
+            
+            if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+                // Si es flujo personal, mostramos alerta de que se guarda en local pero falló la red
+                setStatus({ 
+                    type: 'error', 
+                    message: `Error al conectar con Google Sheets: ${message}. El registro se guardará LOCALMENTE.` 
+                });
+            } else {
+                // Si es otro flujo, simplemente mostramos el error
+                setStatus({ type: 'error', message });
+            }
         } finally {
             setIsLoading(false);
         }
+
+        // Lógica de guardado en historial (Local Storage)
+        // Se ejecuta si hubo éxito O si falló la red pero es un flujo de personal
+        if (submissionSuccess || workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+            if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+                const newItem: HistoryItem = { 
+                    ...formData, 
+                    timestamp: new Date().toISOString(),
+                    synced: submissionSuccess 
+                };
+                
+                const newHistory = [newItem, ...history];
+                setHistory(newHistory);
+                localStorage.setItem(`aqualia_historial_${workflow}`, JSON.stringify(newHistory));
+                
+                // Limpiar formulario
+                setFormData(getInitialState(currentFields));
+                setErrors({});
+            } else if (submissionSuccess) {
+                // Para otros flujos, limpiar formulario solo si hubo éxito
+                setFormData(getInitialState(currentFields));
+                setErrors({});
+            }
+        }
+    };
+
+    // Función auxiliar para renderizar el historial
+    const renderHistory = () => {
+        if (history.length === 0) return null;
+
+        return (
+            <div className="mt-12 border-t border-slate-200 dark:border-slate-700 pt-8 animate-fade-in">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Historial Local</h3>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                        Este dispositivo
+                    </span>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                    <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead className="bg-slate-50 dark:bg-slate-700">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider w-10">Estado</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Fecha Registro</th>
+                                {workflow === 'personal_horas' && (
+                                    <>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Fecha Actividad</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nombre</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actuación</th>
+                                    </>
+                                )}
+                                {workflow === 'personal_vacaciones' && (
+                                    <>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nombre</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Fechas</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Días</th>
+                                    </>
+                                )}
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                            {history.map((item, index) => (
+                                <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        {item.synced ? (
+                                            <div className="flex items-center text-green-600 dark:text-green-400" title="Sincronizado con Google Sheets">
+                                                <CheckCircleIcon className="h-5 w-5" />
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center text-orange-500 dark:text-orange-400" title="Guardado solo localmente (Error de conexión)">
+                                                <XCircleIcon className="h-5 w-5" />
+                                                <span className="ml-1 text-xs">Local</span>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                        {new Date(item.timestamp).toLocaleString('es-ES')}
+                                    </td>
+                                    {workflow === 'personal_horas' && (
+                                        <>
+                                            <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium whitespace-nowrap">
+                                                {item.fecha_inicio}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                {item.nombre}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 max-w-xs truncate">
+                                                {item.actuacion}
+                                            </td>
+                                        </>
+                                    )}
+                                    {workflow === 'personal_vacaciones' && (
+                                        <>
+                                            <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium whitespace-nowrap">
+                                                {item.nombre} {item.apellidos}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                {item.fecha_inicio} al {item.fecha_fin}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                {item.dias}
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
+    // Helper para determinar la clase del grid según el workflow
+    const getGridClass = () => {
+        if (workflow === 'personal_horas') {
+            return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
+        }
+        // Para técnico, usamos 2 columnas en pantallas grandes para mantener las parejas (Total/Horas) juntas visualmente
+        if (workflow === 'tecnico') {
+            return "grid grid-cols-1 md:grid-cols-2 gap-6";
+        }
+        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
     };
 
     if (!workflow) {
@@ -200,17 +371,21 @@ const App: React.FC = () => {
                     <p className="text-slate-500 dark:text-slate-400 mt-4 text-lg">Selecciona el tipo de registro que deseas realizar.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 flex-wrap justify-center">
-                    <button onClick={() => setWorkflow('rutina')} className="px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                    <button onClick={() => setWorkflow('rutina')} className="px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
                         Registrar Rutina
                     </button>
-                    <button onClick={() => setWorkflow('operacional')} className="px-8 py-4 text-lg font-semibold text-white bg-teal-600 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-transform transform hover:scale-105">
+                    <button onClick={() => setWorkflow('operacional')} className="px-8 py-4 text-lg font-semibold text-slate-900 bg-yellow-400 rounded-lg shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
                         Registrar Operacional
                     </button>
-                    <button onClick={() => setWorkflow('personal')} className="px-8 py-4 text-lg font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                     <button onClick={() => setWorkflow('tecnico')} className="px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                        Técnico (Bombeos)
+                    </button>
+                    <button onClick={() => setWorkflow('personal')} className="px-8 py-4 text-lg font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
                         Personal
                     </button>
                 </div>
-                 <footer className="w-full max-w-2xl mx-auto mt-12 px-4">
+
+                 <footer className="w-full max-w-2xl mx-auto mt-8 px-4">
                     <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
                          Creado para la recolección eficiente de datos.
                     </div>
@@ -310,7 +485,7 @@ const App: React.FC = () => {
                             </>
                         )}
 
-                        <div className={workflow === 'personal_horas' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                        <div className={getGridClass()}>
                             {currentFields.map(field => {
                                 if (field.type === 'textarea') {
                                     return (
@@ -363,10 +538,13 @@ const App: React.FC = () => {
 
                         <div className="pt-6">
                             <Button type="submit" isLoading={isLoading} disabled={isLoading}>
-                                {isLoading ? 'Enviando...' : 'Enviar Datos'}
+                                {isLoading ? 'Enviando...' : 'Guardar Registro'}
                             </Button>
                         </div>
                     </form>
+
+                    {/* Renderizamos la tabla de historial solo en flujos de personal */}
+                    {(workflow === 'personal_horas' || workflow === 'personal_vacaciones') && renderHistory()}
                 </div>
                  <footer className="text-center mt-8 text-sm text-slate-500 dark:text-slate-400">
                     <p>Creado para la recolección eficiente de datos.</p>

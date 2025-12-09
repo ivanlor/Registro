@@ -2,6 +2,33 @@
 import type { FormData } from '../types';
 
 /**
+ * Formats values to match Google Sheets requirements.
+ * - Dates: YYYY-MM-DD -> d/m/yyyy (e.g., 2025-12-08 -> 8/12/2025)
+ * - Decimals: Replaces dot with comma (e.g., 2.5 -> 2,5)
+ */
+const formatValueForSheets = (value: string | number): string | number => {
+    if (value === null || value === undefined) return '';
+    const strVal = String(value);
+
+    // 1. Date Format: YYYY-MM-DD -> d/m/yyyy
+    // Matches exactly YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(strVal)) {
+        const [year, month, day] = strVal.split('-');
+        // parseInt removes leading zeros (e.g., "08" -> 8)
+        return `${parseInt(day, 10)}/${parseInt(month, 10)}/${year}`;
+    }
+
+    // 2. Decimal Format: dot to comma
+    // Check if it is a valid number containing a single dot (e.g., 2.5, -10.05)
+    // We avoid replacing dots in text or IPs by ensuring the string looks like a standard float number.
+    if (/^-?\d+\.\d+$/.test(strVal)) {
+        return strVal.replace('.', ',');
+    }
+
+    return value;
+};
+
+/**
  * Sends form data to a Google Apps Script web app endpoint.
  * The script is responsible for finding the correct cells in the Google Sheet
  * and updating them with the provided data.
@@ -23,8 +50,16 @@ export const submitData = async (data: FormData, appsScriptUrl: string, sheetNam
         throw new Error('El nombre de la hoja de cálculo no puede estar vacío.');
     }
 
+    // Apply formatting to all data fields
+    const formattedData: Record<string, string | number> = {};
+    for (const [key, value] of Object.entries(data)) {
+        formattedData[key] = formatValueForSheets(value);
+    }
+
     // Enviamos googleSheetUrl porque el script del usuario lo espera con ese nombre
-    const payload = { ...data, sheetName, googleSheetUrl };
+    const payload = { ...formattedData, sheetName, googleSheetUrl };
+
+    console.log('Enviando datos a Google Sheets (Formateados):', payload);
 
     try {
         const response = await fetch(appsScriptUrl, {
@@ -66,13 +101,13 @@ export const submitData = async (data: FormData, appsScriptUrl: string, sheetNam
             throw new Error(result.message || 'Error desconocido desde Google Apps Script.');
         }
 
-        // Use the success message directly from the script's response
-        return { message: result.message };
+        // Return the specific success message requested by the user
+        return { message: 'Datos guardados correctamente' };
 
     } catch (error) {
         console.error('Error submitting data:', error);
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-             throw new Error('Error de red o CORS. Revisa: 1) La URL del script es correcta. 2) El script está implementado para acceso de "Cualquier persona".');
+             throw new Error('Error de conexión. IMPORTANTE: Si has actualizado el código del script, debes crear una "NUEVA IMPLEMENTACIÓN" (Manage Deployments -> New Version). Si no, el cambio no se aplica.');
         }
         throw error;
     }
