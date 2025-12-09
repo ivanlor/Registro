@@ -9,6 +9,7 @@ import Textarea from './components/Textarea';
 import Select from './components/Select';
 import { CheckCircleIcon } from './components/icons/CheckCircleIcon';
 import { XCircleIcon } from './components/icons/XCircleIcon';
+import { ScriptHelp } from './components/ScriptHelp';
 
 type Workflow = 'rutina' | 'operacional' | 'tecnico' | 'personal' | 'personal_horas' | 'personal_vacaciones';
 type Errors = Record<string, string>;
@@ -34,6 +35,7 @@ const App: React.FC = () => {
     const [status, setStatus] = useState<Status>({ type: 'idle', message: '' });
     const [errors, setErrors] = useState<Errors>({});
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [showScriptHelp, setShowScriptHelp] = useState(false);
 
     const { currentFields, sheetName, formTitle } = useMemo(() => {
         if (workflow === 'rutina') {
@@ -370,17 +372,18 @@ const App: React.FC = () => {
                     <h1 className="text-4xl sm:text-5xl font-bold text-slate-800 dark:text-white">Registros Aqualia</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-4 text-lg">Selecciona el tipo de registro que deseas realizar.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 flex-wrap justify-center">
-                    <button onClick={() => setWorkflow('rutina')} className="px-8 py-4 text-lg font-semibold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
+                {/* BOTONES PRINCIPALES: Hechos más anchos y apilados verticalmente */}
+                <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+                    <button onClick={() => setWorkflow('rutina')} className="w-full px-8 py-4 text-xl font-bold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
                         Registrar Rutina
                     </button>
-                    <button onClick={() => setWorkflow('operacional')} className="px-8 py-4 text-lg font-semibold text-slate-900 bg-yellow-400 rounded-lg shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
+                    <button onClick={() => setWorkflow('operacional')} className="w-full px-8 py-4 text-xl font-bold text-slate-900 bg-yellow-400 rounded-lg shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
                         Registrar Operacional
                     </button>
-                     <button onClick={() => setWorkflow('tecnico')} className="px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                     <button onClick={() => setWorkflow('tecnico')} className="w-full px-8 py-4 text-xl font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
                         Técnico (Bombeos)
                     </button>
-                    <button onClick={() => setWorkflow('personal')} className="px-8 py-4 text-lg font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+                    <button onClick={() => setWorkflow('personal')} className="w-full px-8 py-4 text-xl font-bold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
                         Personal
                     </button>
                 </div>
@@ -389,6 +392,16 @@ const App: React.FC = () => {
                     <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
                          Creado para la recolección eficiente de datos.
                     </div>
+                    {/* Botón discreto para mostrar ayuda del script */}
+                    <div className="text-center">
+                        <button 
+                            onClick={() => setShowScriptHelp(!showScriptHelp)}
+                            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline"
+                        >
+                            {showScriptHelp ? 'Ocultar ayuda configuración' : 'Configuración Google Script'}
+                        </button>
+                    </div>
+                    {showScriptHelp && <div className="mt-4 text-left"><ScriptHelp /></div>}
                 </footer>
             </div>
         );
@@ -411,11 +424,12 @@ const App: React.FC = () => {
                         <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-8">Gestión de Personal</h2>
                         <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Elige una opción:</p>
 
-                        <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                            <button onClick={() => setWorkflow('personal_horas')} className="px-8 py-4 text-lg font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                        {/* BOTONES PERSONAL: Hechos más anchos y apilados verticalmente para consistencia */}
+                        <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+                            <button onClick={() => setWorkflow('personal_horas')} className="w-full px-8 py-4 text-xl font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                                 Registro de horas
                             </button>
-                            <button onClick={() => setWorkflow('personal_vacaciones')} className="px-8 py-4 text-lg font-semibold text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105">
+                            <button onClick={() => setWorkflow('personal_vacaciones')} className="w-full px-8 py-4 text-xl font-bold text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105">
                                 Vacaciones
                             </button>
                         </div>
