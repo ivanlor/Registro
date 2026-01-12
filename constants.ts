@@ -24,6 +24,18 @@ export const BOMBEO_STATIONS = [
     { value: 'Bombeo Sindrán', label: 'Bombeo Sindrán' },
 ];
 
+export const OPERATORS = [
+    { value: '', label: 'Selecciona un operario' },
+    { value: 'Manuel', label: 'Manuel' },
+    { value: 'Beirán', label: 'Beirán' },
+    { value: 'Novoa', label: 'Novoa' },
+    { value: 'Adrián', label: 'Adrián' },
+    { value: 'Julio', label: 'Julio' },
+    { value: 'Eugenio', label: 'Eugenio' },
+    { value: 'David', label: 'David' },
+    { value: 'César', label: 'César' },
+];
+
 export const RUTINA_FORM_FIELDS: FormField[] = [
     { id: 'punto_de_muestreo', label: 'Punto de Muestreo', type: 'select', options: SAMPLING_POINTS, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
@@ -32,16 +44,15 @@ export const RUTINA_FORM_FIELDS: FormField[] = [
     { id: 'color', label: 'Color', type: 'text', required: false },
     { id: 'olor', label: 'Olor', type: 'text', required: false },
     { id: 'sabor', label: 'Sabor', type: 'text', required: false },
-    { id: 'operario', label: 'Operario', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-3' },
+    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
 ];
 
-// CORREGIDO: Orden cambiado para coincidir con la hoja (pH, Turbidez, Cloro)
 export const OPERACIONAL_FORM_FIELDS: FormField[] = [
     { id: 'ph', label: 'pH', type: 'text', required: true },
     { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
     { id: 'cloro', label: 'Cloro libre residual', type: 'text', required: true },
-    { id: 'operario', label: 'Operario', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-3' },
+    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
 ];
 
@@ -54,15 +65,14 @@ export const TECNICO_FORM_FIELDS: FormField[] = [
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-2' },
 ];
 
-// CORREGIDO: Cambiado 'horas_extra' por 'horas' para coincidir con la columna F de la hoja
 export const PERSONAL_HORAS_FORM_FIELDS: FormField[] = [
     { id: 'fecha_inicio', label: 'Fecha Inicio', type: 'date', required: true },
     { id: 'fecha_fin', label: 'Fecha Fin', type: 'date', required: true },
     { id: 'hora_inicio', label: 'Hora Inicio', type: 'time', required: true },
     { id: 'hora_fin', label: 'Hora Fin', type: 'time', required: true },
     { id: 'actuacion', label: 'Actuación / Descripción', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-2' },
-    { id: 'horas', label: 'Horas', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-2' },
-    { id: 'nombre', label: 'Nombre', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-2' },
+    { id: 'horas', label: 'Horas', type: 'text', required: false, className: 'md:col-span-2 lg:col-span-2' },
+    { id: 'nombre', label: 'Nombre', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-2' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-4' },
 ];
 
