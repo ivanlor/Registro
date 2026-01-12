@@ -152,6 +152,14 @@ const App: React.FC = () => {
             sanitizedValue = sanitizedValue.replace(/\./g, ',');
         }
 
+        // Restricción estricta para el campo 'horas' en personal: solo números y comas
+        if (workflow === 'personal_horas' && name === 'horas') {
+            // Convertimos puntos a comas primero por comodidad del usuario
+            sanitizedValue = sanitizedValue.replace(/\./g, ',');
+            // Eliminamos todo lo que no sea número o coma
+            sanitizedValue = sanitizedValue.replace(/[^0-9,]/g, '');
+        }
+
         setFormData(prev => {
             const newData = { ...prev, [name]: sanitizedValue };
             return newData;
@@ -539,7 +547,11 @@ const App: React.FC = () => {
                                     readOnly={field.readOnly}
                                     error={errors[field.id]}
                                     className={field.className}
-                                    inputMode={((workflow === 'rutina' || workflow === 'operacional') && ['ph', 'turbidez', 'cloro'].includes(field.id)) ? 'decimal' : undefined}
+                                    inputMode={
+                                        ((workflow === 'rutina' || workflow === 'operacional') && ['ph', 'turbidez', 'cloro'].includes(field.id)) ||
+                                        (workflow === 'personal_horas' && field.id === 'horas')
+                                        ? 'decimal' : undefined
+                                    }
                                 />
                             )})}
                         </div>
