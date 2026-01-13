@@ -1,12 +1,12 @@
 
 export interface FormData {
-    [key: string]: string | number;
+    [key: string]: string | number | string[];
 }
 
 export interface FormField {
     id: string;
     label: string;
-    type: 'text' | 'number' | 'date' | 'time' | 'textarea' | 'select';
+    type: 'text' | 'number' | 'date' | 'time' | 'textarea' | 'select' | 'checkbox-group';
     required?: boolean;
     readOnly?: boolean;
     options?: { value: string; label: string }[];

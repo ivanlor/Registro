@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { RUTINA_FORM_FIELDS, OPERACIONAL_FORM_FIELDS, PERSONAL_HORAS_FORM_FIELDS, PERSONAL_VACACIONES_FORM_FIELDS, TECNICO_FORM_FIELDS } from './constants';
 import type { FormData, Status, FormField } from './types';
@@ -7,23 +8,20 @@ import Button from './components/Button';
 import Alert from './components/Alert';
 import Textarea from './components/Textarea';
 import Select from './components/Select';
+import CheckboxGroup from './components/CheckboxGroup';
 import { CheckCircleIcon } from './components/icons/CheckCircleIcon';
 import { XCircleIcon } from './components/icons/XCircleIcon';
 
 type Workflow = 'rutina' | 'operacional' | 'tecnico' | 'personal' | 'personal_horas' | 'personal_vacaciones';
 type Errors = Record<string, string>;
 type HistoryItem = {
-    [key: string]: string | number | boolean;
+    [key: string]: string | number | boolean | string[];
     timestamp: string;
     synced: boolean;
 };
 
 // --- URLs Config ---
-// IMPORTANTE: Sustituye esta URL si cambia al crear una nueva implementación
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnFy_KVZQqvSATkFMeGpXUtfQVnJIljE1zm9sN68FWHCs5V5xte3pHy3X4aw1_25Gy/exec';
-
-// URL de tu hoja de cálculo "Monforte de Lemos"
-// Aseguramos que el ID es el correcto (I mayúscula: ...D5v3IfupEs)
 const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1oRMEzIffoGoKdsXVNx68tJMPUCLt5pqG9D5v3IfupEs/edit';
 
 
@@ -53,7 +51,7 @@ const App: React.FC = () => {
         if (workflow === 'tecnico') {
             return {
                 currentFields: TECNICO_FORM_FIELDS,
-                sheetName: 'Bombeos', // Coincide con la pestaña de la hoja de cálculo
+                sheetName: 'Bombeos',
                 formTitle: 'Registro Técnico de Bombeo'
             };
         }
@@ -80,7 +78,6 @@ const App: React.FC = () => {
         
         const initialState: FormData = {};
         
-        // Base fields based on workflow
         if (workflow === 'rutina' || workflow === 'operacional' || workflow === 'tecnico') {
             initialState['date'] = today;
         }
@@ -99,13 +96,15 @@ const App: React.FC = () => {
         if (workflow === 'personal_vacaciones') {
             initialState['fecha_inicio'] = today;
             initialState['fecha_fin'] = today;
-            initialState['dias'] = 1; // Default to 1 day
+            initialState['dias'] = 1;
         }
 
         fields.forEach(field => {
              if (initialState[field.id] === undefined) {
                  if (field.type === 'select' && field.options && field.options.length > 0) {
                      initialState[field.id] = field.options[0].value;
+                } else if (field.type === 'checkbox-group') {
+                    initialState[field.id] = [];
                 } else {
                     initialState[field.id] = '';
                 }
@@ -121,7 +120,6 @@ const App: React.FC = () => {
             setErrors({});
         }
         
-        // Cargar historial si aplica
         if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
             const key = `aqualia_historial_${workflow}`;
             const saved = localStorage.getItem(key);
@@ -143,39 +141,26 @@ const App: React.FC = () => {
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
 
-        // Normalización para eliminar tildes y diacríticos (ej: á -> a, ñ -> n)
-        // Esto impide la inserción de tildes en cualquier campo.
         let sanitizedValue = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // Reemplazo automático de puntos por comas en campos específicos de rutina y operacional
         if ((workflow === 'rutina' || workflow === 'operacional') && ['ph', 'turbidez', 'cloro'].includes(name)) {
             sanitizedValue = sanitizedValue.replace(/\./g, ',');
         }
 
-        // Restricción estricta para el campo 'horas' en personal: solo números y comas
         if (workflow === 'personal_horas' && name === 'horas') {
-            // Convertimos puntos a comas primero por comodidad del usuario
             sanitizedValue = sanitizedValue.replace(/\./g, ',');
-            // Eliminamos todo lo que no sea número o coma
             sanitizedValue = sanitizedValue.replace(/[^0-9,]/g, '');
         }
 
-        setFormData(prev => {
-            const newData = { ...prev, [name]: sanitizedValue };
-            return newData;
-        });
+        setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
 
         setErrors(prevErrors => {
             const newErrors = { ...prevErrors };
             delete newErrors[name];
-
             if (sanitizedValue === '') return newErrors;
 
-            // Para validación, convertimos coma a punto para que parseFloat funcione
             const valueForValidation = sanitizedValue.replace(',', '.');
             const numericValue = parseFloat(valueForValidation);
-
-            // Si no es un número válido, no podemos validar rangos (salvo que el campo sea texto libre, pero 'ph' y 'cloro' requieren ser números)
             if (isNaN(numericValue)) return newErrors;
 
             const validationRules: Record<string, Record<string, { condition: boolean; message: string }>> = {
@@ -194,7 +179,7 @@ const App: React.FC = () => {
             };
             
             if (workflow && workflow !== 'personal') {
-                 const rulesForWorkflow = validationRules[workflow];
+                const rulesForWorkflow = validationRules[workflow];
                 if (rulesForWorkflow && rulesForWorkflow[name]) {
                     const rule = rulesForWorkflow[name];
                     if (rule.condition) {
@@ -202,47 +187,76 @@ const App: React.FC = () => {
                     }
                 }
             }
-            
             return newErrors;
         });
     }, [workflow]);
 
+    const handleMultiSelectChange = useCallback((name: string, value: string[]) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        setErrors(prevErrors => {
+            const newErrors = { ...prevErrors };
+            delete newErrors[name];
+            return newErrors;
+        });
+    }, []);
+
+    const validateForm = (): boolean => {
+        const newErrors: Errors = {};
+        currentFields.forEach(field => {
+            if (field.required) {
+                const val = formData[field.id];
+                if (field.type === 'checkbox-group') {
+                    if (!val || (Array.isArray(val) && val.length === 0)) {
+                        newErrors[field.id] = 'Debes seleccionar al menos una opción.';
+                    }
+                } else if (!val) {
+                    newErrors[field.id] = 'Este campo es obligatorio.';
+                }
+            }
+        });
+        
+        if (workflow !== 'personal_horas' && workflow !== 'personal_vacaciones') {
+            if (!formData.date) newErrors.date = 'La fecha es obligatoria.';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!sheetName) return;
+
+        if (!validateForm()) {
+            setStatus({ type: 'error', message: 'Por favor, rellena todos los campos obligatorios correctamente.' });
+            return;
+        }
         
         setIsLoading(true);
         setStatus({ type: 'idle', message: '' });
 
         let submissionSuccess = false;
-        let resultMessage = '';
 
         try {
-            // Intentar enviar a Google Sheets
             const result = await submitData(formData, APPS_SCRIPT_URL, sheetName, GOOGLE_SHEET_URL);
             submissionSuccess = true;
-            resultMessage = result.message;
             setStatus({ type: 'success', message: result.message });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'An unknown error occurred.';
             submissionSuccess = false;
             
             if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
-                // Si es flujo personal, mostramos alerta de que se guarda en local pero falló la red
                 setStatus({ 
                     type: 'error', 
                     message: `Error al conectar con Google Sheets: ${message}. El registro se guardará LOCALMENTE.` 
                 });
             } else {
-                // Si es otro flujo, simplemente mostramos el error
                 setStatus({ type: 'error', message });
             }
         } finally {
             setIsLoading(false);
         }
 
-        // Lógica de guardado en historial (Local Storage)
-        // Se ejecuta si hubo éxito O si falló la red pero es un flujo de personal
         if (submissionSuccess || workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
             if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
                 const newItem: HistoryItem = { 
@@ -255,18 +269,15 @@ const App: React.FC = () => {
                 setHistory(newHistory);
                 localStorage.setItem(`aqualia_historial_${workflow}`, JSON.stringify(newHistory));
                 
-                // Limpiar formulario
                 setFormData(getInitialState(currentFields));
                 setErrors({});
             } else if (submissionSuccess) {
-                // Para otros flujos, limpiar formulario solo si hubo éxito
                 setFormData(getInitialState(currentFields));
                 setErrors({});
             }
         }
     };
 
-    // Función auxiliar para renderizar el historial
     const renderHistory = () => {
         if (history.length === 0) return null;
 
@@ -321,13 +332,13 @@ const App: React.FC = () => {
                                     {workflow === 'personal_horas' && (
                                         <>
                                             <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium whitespace-nowrap">
-                                                {item.fecha_inicio}
+                                                {String(item.fecha_inicio)}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                                {item.nombre}
+                                                {String(item.nombre)}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 max-w-xs truncate">
-                                                {item.actuacion}
+                                                {String(item.actuacion)}
                                             </td>
                                         </>
                                     )}
@@ -340,7 +351,7 @@ const App: React.FC = () => {
                                                 {item.fecha_inicio} al {item.fecha_fin}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                                {item.dias}
+                                                {String(item.dias)}
                                             </td>
                                         </>
                                     )}
@@ -353,37 +364,25 @@ const App: React.FC = () => {
         );
     };
 
-    // Helper para determinar la clase del grid según el workflow
     const getGridClass = () => {
-        if (workflow === 'personal_horas') {
-            return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
-        }
-        // Para técnico, usamos 2 columnas en pantallas grandes para mantener las parejas (Total/Horas) juntas visualmente
-        if (workflow === 'tecnico') {
-            return "grid grid-cols-1 md:grid-cols-2 gap-6";
-        }
+        if (workflow === 'personal_horas') return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6";
+        if (workflow === 'tecnico') return "grid grid-cols-1 md:grid-cols-2 gap-6";
         return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
     };
 
     if (!workflow) {
         return (
             <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans">
-                {/* Contenedor principal tipo tarjeta */}
                 <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10 text-center relative">
-                    
-                    {/* Alerta de estado dentro de la tarjeta */}
                     {status.message && status.type !== 'idle' && (
                         <div className="mb-6 text-left">
                              <Alert type={status.type} message={status.message} />
                         </div>
                     )}
-
                     <div className="mb-8">
                         <h1 className="text-3xl sm:text-5xl font-bold text-slate-800 dark:text-white">Registros Aqualia</h1>
                         <p className="text-slate-500 dark:text-slate-400 mt-4 text-lg">Selecciona el tipo de registro.</p>
                     </div>
-
-                    {/* BOTONES PRINCIPALES: Estilo tarjeta y apilados */}
                     <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
                         <button onClick={() => setWorkflow('rutina')} className="w-full px-8 py-4 text-xl font-bold text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105">
                             Registrar Rutina
@@ -398,7 +397,6 @@ const App: React.FC = () => {
                             Personal
                         </button>
                     </div>
-
                      <footer className="w-full mt-8">
                         <div className="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">
                              Creado para la recolección eficiente de datos.
@@ -414,19 +412,13 @@ const App: React.FC = () => {
             <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-900 font-sans">
                 <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10">
                      <div className="flex justify-start mb-4">
-                        <button 
-                            onClick={() => setWorkflow(null)} 
-                            className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
-                        >
+                        <button onClick={() => setWorkflow(null)} className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200">
                             &larr; Volver
                         </button>
                      </div>
-                    
                     <div className="text-center">
                         <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-8">Gestión de Personal</h2>
                         <p className="text-slate-500 dark:text-slate-400 mb-8 text-lg">Elige una opción:</p>
-
-                        {/* BOTONES PERSONAL: Hechos más anchos y apilados verticalmente para consistencia */}
                         <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
                             <button onClick={() => setWorkflow('personal_horas')} className="w-full px-8 py-4 text-xl font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
                                 Registro de horas
@@ -446,17 +438,7 @@ const App: React.FC = () => {
             <div className="w-full max-w-4xl mx-auto">
                 <div className="bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-6 sm:p-10">
                      <div className="flex justify-start mb-4">
-                        <button 
-                            onClick={() => {
-                                // If currently in a personal sub-workflow, go back to personal menu. Otherwise go to main menu.
-                                if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
-                                    setWorkflow('personal');
-                                } else {
-                                    setWorkflow(null);
-                                }
-                            }} 
-                            className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200"
-                        >
+                        <button onClick={() => { if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') { setWorkflow('personal'); } else { setWorkflow(null); } }} className="text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg px-4 py-2 shadow-sm transition-colors duration-200">
                             &larr; Volver
                         </button>
                     </div>
@@ -483,6 +465,7 @@ const App: React.FC = () => {
                                         value={String(formData.date || '')}
                                         onChange={handleChange}
                                         required
+                                        error={errors.date}
                                         className="md:col-span-2 lg:col-span-3"
                                     />
                                     {workflow === 'operacional' && (
@@ -533,6 +516,20 @@ const App: React.FC = () => {
                                         />
                                     )
                                 }
+                                if (field.type === 'checkbox-group') {
+                                    return (
+                                        <CheckboxGroup
+                                            key={field.id}
+                                            id={field.id}
+                                            label={field.label}
+                                            options={field.options || []}
+                                            value={(formData[field.id] as string[]) || []}
+                                            onChange={handleMultiSelectChange}
+                                            required={field.required}
+                                            className={field.className}
+                                        />
+                                    )
+                                }
                                 return (
                                 <Input
                                     key={field.id}
@@ -562,8 +559,6 @@ const App: React.FC = () => {
                             </Button>
                         </div>
                     </form>
-
-                    {/* Renderizamos la tabla de historial solo en flujos de personal */}
                     {(workflow === 'personal_horas' || workflow === 'personal_vacaciones') && renderHistory()}
                 </div>
                  <footer className="text-center mt-8 text-sm text-slate-500 dark:text-slate-400">

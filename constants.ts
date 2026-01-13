@@ -1,4 +1,3 @@
-
 import type { FormField } from './types';
 
 export const SAMPLING_POINTS = [
@@ -25,15 +24,20 @@ export const BOMBEO_STATIONS = [
 ];
 
 export const OPERATORS = [
-    { value: '', label: 'Selecciona un operario' },
     { value: 'Manuel', label: 'Manuel' },
-    { value: 'Beirán', label: 'Beirán' },
+    { value: 'Beiran', label: 'Beiran' },
     { value: 'Novoa', label: 'Novoa' },
-    { value: 'Adrián', label: 'Adrián' },
+    { value: 'Adrian', label: 'Adrian' },
     { value: 'Julio', label: 'Julio' },
     { value: 'Eugenio', label: 'Eugenio' },
     { value: 'David', label: 'David' },
-    { value: 'César', label: 'César' },
+    { value: 'Cesar', label: 'Cesar' },
+];
+
+// Operadores con opción vacía para selectores individuales
+export const OPERATORS_WITH_EMPTY = [
+    { value: '', label: 'Selecciona un operario' },
+    ...OPERATORS
 ];
 
 export const RUTINA_FORM_FIELDS: FormField[] = [
@@ -44,7 +48,7 @@ export const RUTINA_FORM_FIELDS: FormField[] = [
     { id: 'color', label: 'Color', type: 'text', required: false },
     { id: 'olor', label: 'Olor', type: 'text', required: false },
     { id: 'sabor', label: 'Sabor', type: 'text', required: false },
-    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-3' },
+    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS_WITH_EMPTY, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
 ];
 
@@ -52,7 +56,7 @@ export const OPERACIONAL_FORM_FIELDS: FormField[] = [
     { id: 'ph', label: 'pH', type: 'text', required: true },
     { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
     { id: 'cloro', label: 'Cloro libre residual', type: 'text', required: true },
-    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-3' },
+    { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS_WITH_EMPTY, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
 ];
 
@@ -72,7 +76,7 @@ export const PERSONAL_HORAS_FORM_FIELDS: FormField[] = [
     { id: 'hora_fin', label: 'Hora Fin', type: 'time', required: true },
     { id: 'actuacion', label: 'Actuación / Descripción', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-2' },
     { id: 'horas', label: 'Horas', type: 'text', required: false, className: 'md:col-span-2 lg:col-span-2' },
-    { id: 'nombre', label: 'Nombre', type: 'select', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-2' },
+    { id: 'nombre', label: 'Operario(s)', type: 'checkbox-group', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-4' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-4' },
 ];
 
