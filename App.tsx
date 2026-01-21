@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { RUTINA_FORM_FIELDS, OPERACIONAL_FORM_FIELDS, PERSONAL_HORAS_FORM_FIELDS, PERSONAL_VACACIONES_FORM_FIELDS, TECNICO_FORM_FIELDS } from './constants';
 import type { FormData, Status, FormField } from './types';
@@ -294,11 +293,13 @@ const App: React.FC = () => {
                         <thead className="bg-slate-50 dark:bg-slate-700">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider w-10">Estado</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Fecha Registro</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Registro</th>
                                 {workflow === 'personal_horas' && (
                                     <>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Fecha Actividad</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">F. Inicio</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">F. Fin</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nombre</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Horas</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actuación</th>
                                     </>
                                 )}
@@ -327,15 +328,21 @@ const App: React.FC = () => {
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                        {new Date(item.timestamp).toLocaleString('es-ES')}
+                                        {new Date(item.timestamp).toLocaleTimeString('es-ES')}
                                     </td>
                                     {workflow === 'personal_horas' && (
                                         <>
                                             <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium whitespace-nowrap">
-                                                {String(item.fecha_inicio)}
+                                                {String(item.fecha_inicio).split('-').reverse().join('/')}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium whitespace-nowrap">
+                                                {String(item.fecha_fin).split('-').reverse().join('/')}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                                 {String(item.nombre)}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                                                {item.horas ? String(item.horas) : '—'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 max-w-xs truncate">
                                                 {String(item.actuacion)}
@@ -348,7 +355,7 @@ const App: React.FC = () => {
                                                 {item.nombre} {item.apellidos}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                                {item.fecha_inicio} al {item.fecha_fin}
+                                                {String(item.fecha_inicio).split('-').reverse().join('/')} al {String(item.fecha_fin).split('-').reverse().join('/')}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                                 {String(item.dias)}
@@ -524,7 +531,7 @@ const App: React.FC = () => {
                                             label={field.label}
                                             options={field.options || []}
                                             value={(formData[field.id] as string[]) || []}
-                                            onChange={handleMultiSelectChange}
+                                            onChange={(id, val) => handleMultiSelectChange(id, val)}
                                             required={field.required}
                                             className={field.className}
                                         />

@@ -34,7 +34,6 @@ export const OPERATORS = [
     { value: 'Cesar', label: 'Cesar' },
 ];
 
-// Operadores con opción vacía para selectores individuales
 export const OPERATORS_WITH_EMPTY = [
     { value: '', label: 'Selecciona un operario' },
     ...OPERATORS
@@ -76,8 +75,8 @@ export const PERSONAL_HORAS_FORM_FIELDS: FormField[] = [
     { id: 'hora_fin', label: 'Hora Fin', type: 'time', required: true },
     { id: 'actuacion', label: 'Actuación / Descripción', type: 'text', required: true, className: 'md:col-span-2 lg:col-span-2' },
     { id: 'horas', label: 'Horas', type: 'text', required: false, className: 'md:col-span-2 lg:col-span-2' },
-    { id: 'nombre', label: 'Operario(s)', type: 'checkbox-group', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-4' },
-    { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-4' },
+    { id: 'nombre', label: 'Operarios implicados', type: 'checkbox-group', options: OPERATORS, required: true, className: 'md:col-span-2 lg:col-span-2' },
+    { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-2' },
 ];
 
 export const PERSONAL_VACACIONES_FORM_FIELDS: FormField[] = [

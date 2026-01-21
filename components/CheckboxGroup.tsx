@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface CheckboxGroupProps {
@@ -11,22 +12,25 @@ interface CheckboxGroupProps {
 }
 
 const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ label, id, options, value, onChange, required, className }) => {
+    // Ensure value is always an array to prevent .length or .includes errors
+    const safeValue = value || [];
+
     const handleToggle = (optionValue: string) => {
-        const newValue = value.includes(optionValue)
-            ? value.filter(v => v !== optionValue)
-            : [...value, optionValue];
+        const newValue = safeValue.includes(optionValue)
+            ? safeValue.filter(v => v !== optionValue)
+            : [...safeValue, optionValue];
         onChange(id, newValue);
     };
 
     const handleSelectAll = () => {
-        if (value.length === options.length) {
+        if (safeValue.length === options.length) {
             onChange(id, []);
         } else {
             onChange(id, options.map(o => o.value));
         }
     };
 
-    const allSelected = value.length === options.length && options.length > 0;
+    const allSelected = safeValue.length === options.length && options.length > 0;
 
     return (
         <div className={className}>
@@ -44,7 +48,7 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ label, id, options, value
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3">
                 {options.map((option) => {
-                    const isSelected = value.includes(option.value);
+                    const isSelected = safeValue.includes(option.value);
                     return (
                         <label
                             key={option.value}
