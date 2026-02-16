@@ -53,7 +53,8 @@ export const RUTINA_FORM_FIELDS: FormField[] = [
 
 export const OPERACIONAL_FORM_FIELDS: FormField[] = [
     { id: 'ph', label: 'pH', type: 'text', required: true },
-    { id: 'turbidez', label: 'Turbidez', type: 'text', required: true },
+    { id: 'turbidez_bruta', label: 'Turbidez Bruta', type: 'text', required: true },
+    { id: 'turbidez_salida', label: 'Turbidez Salida', type: 'text', required: true },
     { id: 'cloro', label: 'Cloro libre residual', type: 'text', required: true },
     { id: 'operario', label: 'Operario', type: 'select', options: OPERATORS_WITH_EMPTY, required: true, className: 'md:col-span-2 lg:col-span-3' },
     { id: 'observaciones', label: 'Observaciones', type: 'textarea', required: false, className: 'md:col-span-2 lg:col-span-3' },
