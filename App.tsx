@@ -71,13 +71,14 @@ const App: React.FC = () => {
             setFormData(getInitialState(currentFields));
             setStatus({ type: 'idle', message: '' });
             setErrors({});
-        }
-        if (workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
+            
             const key = `aqualia_historial_${workflow}`;
             const saved = localStorage.getItem(key);
             if (saved) { try { setHistory(JSON.parse(saved)); } catch (e) { setHistory([]); } }
             else { setHistory([]); }
-        } else { setHistory([]); }
+        } else {
+            setHistory([]);
+        }
     }, [workflow, currentFields, getInitialState]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -151,13 +152,12 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-        if (success || workflow === 'personal_horas' || workflow === 'personal_vacaciones') {
-            if (workflow?.startsWith('personal')) {
-                const newItem = { ...formData, timestamp: new Date().toISOString(), synced: success };
-                const newHistory = [newItem, ...history];
-                setHistory(newHistory);
-                localStorage.setItem(`aqualia_historial_${workflow}`, JSON.stringify(newHistory));
-            }
+        if (success || workflow?.startsWith('personal')) {
+            const newItem = { ...formData, timestamp: new Date().toISOString(), synced: success };
+            const newHistory = [newItem, ...history];
+            setHistory(newHistory);
+            localStorage.setItem(`aqualia_historial_${workflow}`, JSON.stringify(newHistory));
+            
             setFormData(getInitialState(currentFields));
             setErrors({});
         }
@@ -177,6 +177,31 @@ const App: React.FC = () => {
                             <tr>
                                 <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Estado</th>
                                 <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Hora Reg.</th>
+                                {workflow === 'rutina' && (
+                                    <>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Punto</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Turb.</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">pH</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Cloro</th>
+                                    </>
+                                )}
+                                {workflow === 'operacional' && (
+                                    <>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">pH</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">T. Bruta</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">T. Salida</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Cloro</th>
+                                    </>
+                                )}
+                                {workflow === 'tecnico' && (
+                                    <>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Bombeo</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">T. B1</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">H. B1</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">T. B2</th>
+                                        <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">H. B2</th>
+                                    </>
+                                )}
                                 {workflow === 'personal_horas' && (
                                     <>
                                         <th className="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">F. Inicio</th>
@@ -199,6 +224,31 @@ const App: React.FC = () => {
                                 <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                     <td className="px-4 py-3">{item.synced ? <CheckCircleIcon className="h-5 w-5 text-green-500" /> : <XCircleIcon className="h-5 w-5 text-orange-500" />}</td>
                                     <td className="px-4 py-3 text-slate-500">{new Date(item.timestamp).toLocaleTimeString('es-ES')}</td>
+                                    {workflow === 'rutina' && (
+                                        <>
+                                            <td className="px-4 py-3 truncate max-w-[120px]">{String(item.punto_de_muestreo)}</td>
+                                            <td className="px-4 py-3 font-bold">{item.turbidez}</td>
+                                            <td className="px-4 py-3">{item.ph}</td>
+                                            <td className="px-4 py-3">{item.cloro}</td>
+                                        </>
+                                    )}
+                                    {workflow === 'operacional' && (
+                                        <>
+                                            <td className="px-4 py-3">{item.ph}</td>
+                                            <td className="px-4 py-3">{item.turbidez_bruta}</td>
+                                            <td className="px-4 py-3">{item.turbidez_salida}</td>
+                                            <td className="px-4 py-3">{item.cloro}</td>
+                                        </>
+                                    )}
+                                    {workflow === 'tecnico' && (
+                                        <>
+                                            <td className="px-4 py-3 truncate max-w-[120px]">{String(item.bombeo)}</td>
+                                            <td className="px-4 py-3 font-bold">{item.total_bomba_1}</td>
+                                            <td className="px-4 py-3">{item.horas_bomba_1}</td>
+                                            <td className="px-4 py-3 font-bold">{item.total_bomba_2}</td>
+                                            <td className="px-4 py-3">{item.horas_bomba_2}</td>
+                                        </>
+                                    )}
                                     {workflow === 'personal_horas' && (
                                         <>
                                             <td className="px-4 py-3 font-medium">{String(item.fecha_inicio).split('-').reverse().join('/')}</td>
